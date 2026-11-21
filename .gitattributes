@@ -1,0 +1,10 @@
+# 改行コードはリポジトリ内では LF に統一する (Windows の core.autocrlf に左右されないように)
+* text=auto eol=lf
+
+# シェルスクリプトは CRLF だと Linux / CI で動かない
+gradlew text eol=lf
+
+# Windows のバッチファイルは CRLF で取り出す
+*.bat text eol=crlf
+
+*.jar binary
