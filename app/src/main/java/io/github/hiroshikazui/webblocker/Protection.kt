@@ -10,41 +10,37 @@ import android.os.Bundle
 import android.os.UserManager
 import android.util.Log
 
-/** デバイスオーナーとして登録される受け口。登録された瞬間に保護をかける。 */
+/** 旧版でデバイスオーナーとして登録された受け口。登録されてもすぐ解除する。 */
 class AdminReceiver : DeviceAdminReceiver() {
     override fun onEnabled(context: Context, intent: Intent) {
-        Protection.apply(context)
+        Protection.release(context)
     }
 }
 
 /**
- * デバイスオーナー権限で、このアプリと VPN を外せなくする。
- * Windows 版の「サービス保護」「暗号化 DNS の無効化」に相当する。
- * 解除する機能 (clearDeviceOwnerApp の呼び出し) は意図的に持たない。
+ * デバイスオーナーによる保護を解除する。
+ *
+ * 旧版 (0.1.0) はデバイスオーナー権限でアプリと VPN を外せなくしていたが、デバイスオーナーの端末には
+ * 個人の Google アカウントを追加できず、端末が実用にならなかった。この版は起動時・更新時に
+ * 旧版がかけた制限をすべて外し、デバイスオーナーを解除する。ブロック (VPN) 自体は続ける。
  */
 object Protection {
     private const val TAG = "Protection"
 
-    private val RESTRICTIONS = listOf(
-        // VPN の設定変更・解除
+    /** 旧版がかけていた制限 */
+    private val LEGACY_RESTRICTIONS = listOf(
         UserManager.DISALLOW_CONFIG_VPN,
-        // 設定画面からの初期化
         UserManager.DISALLOW_FACTORY_RESET,
-        // セーフモード (他社アプリが止まり VPN も止まる)
         UserManager.DISALLOW_SAFE_BOOT,
-        // 日時・タイムゾーンの変更
         UserManager.DISALLOW_CONFIG_DATE_TIME,
-        // プライベート DNS (DNS over TLS) で VPN の DNS を迂回されないようにする
         UserManager.DISALLOW_CONFIG_PRIVATE_DNS,
-        // 別ユーザーではこの VPN が効かない
         UserManager.DISALLOW_ADD_USER,
         UserManager.DISALLOW_USER_SWITCH,
-        // adb (PC からの操作) と開発者向けオプション
         UserManager.DISALLOW_DEBUGGING_FEATURES,
     )
 
-    /** ブラウザ内蔵の DNS over HTTPS を止める (Chromium 系の管理ポリシー)。 */
-    private val CHROMIUM_BROWSERS = listOf(
+    /** 旧版が DNS over HTTPS を止めていたブラウザ */
+    private val LEGACY_BROWSERS = listOf(
         "com.android.chrome",
         "com.chrome.beta",
         "com.microsoft.emmx",
@@ -54,27 +50,28 @@ object Protection {
     fun isDeviceOwner(context: Context): Boolean =
         dpm(context).isDeviceOwnerApp(context.packageName)
 
-    fun apply(context: Context) {
+    fun release(context: Context) {
         if (!isDeviceOwner(context)) return
         val dpm = dpm(context)
         val admin = ComponentName(context, AdminReceiver::class.java)
         val pkg = context.packageName
 
-        step("アンインストール禁止") { dpm.setUninstallBlocked(admin, pkg, true) }
-        // lockdown=false: VPN が落ちた瞬間に全通信を止めることはしない (常時接続の再起動に任せる)
-        step("常時接続 VPN") { dpm.setAlwaysOnVpnPackage(admin, pkg, false) }
-        for (r in RESTRICTIONS) {
-            step("制限 $r") { dpm.addUserRestriction(admin, r) }
+        step("アンインストール禁止の解除") { dpm.setUninstallBlocked(admin, pkg, false) }
+        step("常時接続 VPN の解除") { dpm.setAlwaysOnVpnPackage(admin, null, false) }
+        for (r in LEGACY_RESTRICTIONS) {
+            step("制限 $r の解除") { dpm.clearUserRestriction(admin, r) }
         }
-        step("プライベート DNS を自動に固定") { dpm.setGlobalPrivateDnsModeOpportunistic(admin) }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // 強制停止・データ消去を禁止
-            step("強制停止の禁止") { dpm.setUserControlDisabledPackages(admin, listOf(pkg)) }
+            step("強制停止禁止の解除") { dpm.setUserControlDisabledPackages(admin, emptyList()) }
         }
-        val browserPolicy = Bundle().apply { putString("DnsOverHttpsMode", "off") }
-        for (browser in CHROMIUM_BROWSERS) {
-            step("$browser の DoH 無効化") { dpm.setApplicationRestrictions(admin, browser, browserPolicy) }
+        for (browser in LEGACY_BROWSERS) {
+            step("$browser のポリシー解除") { dpm.setApplicationRestrictions(admin, browser, Bundle()) }
         }
+        step("デバイスオーナーの解除") {
+            @Suppress("DEPRECATION")
+            dpm.clearDeviceOwnerApp(pkg)
+        }
+        Log.i(TAG, "デバイスオーナーを解除しました: ${!isDeviceOwner(context)}")
     }
 
     private fun dpm(context: Context): DevicePolicyManager =

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -64,7 +63,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        Protection.apply(this)
+        Protection.release(this)
         state.refresh()
     }
 
@@ -77,9 +76,6 @@ class MainActivity : ComponentActivity() {
         startService(Intent(this, BlockerVpnService::class.java))
     }
 }
-
-private const val ADB_COMMAND =
-    "adb shell dpm set-device-owner io.github.hiroshikazui.webblocker/.AdminReceiver"
 
 @Composable
 private fun MainScreen(state: BlockerState, onStartVpn: () -> Unit) {
@@ -143,12 +139,7 @@ private fun MainScreen(state: BlockerState, onStartVpn: () -> Unit) {
                         if (snap.inBlockHours) " (現在ブロック時間中)" else " (現在は時間外)",
                 )
                 Text(if (snap.ntpSynced) "時刻: ネットの時刻と同期済み" else "時刻: 未同期 (端末の時計を使用)")
-                if (deviceOwner) {
-                    Text("保護: 有効 (アンインストール・VPN 解除・初期化・日時変更を禁止)")
-                } else {
-                    Text("保護: 未設定。PC から次のコマンドを実行してください (README 参照)")
-                    SelectionContainer { Text(ADB_COMMAND, style = MaterialTheme.typography.bodySmall) }
-                }
+                Text(if (deviceOwner) "旧版の保護: 解除中です" else "旧版の保護: なし (Google アカウントを追加できます)")
             }
         }
         message?.let { m ->

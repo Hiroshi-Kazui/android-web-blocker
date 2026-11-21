@@ -10,7 +10,7 @@ class WebBlockerApp : Application() {
         super.onCreate()
         state = BlockerState(this)
         state.startBackground()
-        // 起動のたびに保護設定をかけ直す (Windows 版の定期的な再適用に相当)
-        Protection.apply(this)
+        // 旧版でかけたデバイスオーナーの保護が残っていれば外す
+        Protection.release(this)
     }
 }
