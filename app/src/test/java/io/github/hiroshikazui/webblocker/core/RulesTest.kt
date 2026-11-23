@@ -33,8 +33,13 @@ class SitesTest {
 
     @Test
     fun defaultsReflectAgreedScope() {
-        // Amazon 本体は買い物に使うため入れない。dmm.com は全体を止める
-        assertTrue(Sites.PERMANENT_DEFAULTS.none { it.contains("amazon") })
+        // Amazon 本体 (買い物・商品画像) は止めず、Prime Video の動画用ドメインだけを止める。dmm.com は全体を止める
+        for (shopping in listOf("www.amazon.co.jp", "amazon.com", "m.media-amazon.com", "images-fe.ssl-images-amazon.com")) {
+            assertFalse(shopping, Sites.matches(shopping, Sites.PERMANENT_DEFAULTS))
+        }
+        for (video in listOf("keho.api.amazonvideo.com", "x.vod-dash.main.amazon.pv-cdn.net", "ters-draper1.us-west-2.aiv-delivery.net")) {
+            assertTrue(video, Sites.matches(video, Sites.PERMANENT_DEFAULTS))
+        }
         assertTrue("dmm.com" in Sites.PERMANENT_DEFAULTS)
         assertTrue(Sites.matches("music.youtube.com", Sites.TIMED_DEFAULTS))
     }

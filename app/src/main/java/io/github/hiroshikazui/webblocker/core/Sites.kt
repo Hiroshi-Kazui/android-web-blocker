@@ -29,6 +29,11 @@ object Sites {
         "netflix.com",
         // Prime Video (amazon.co.jp 本体は買い物に使うため止めない)
         "primevideo.com",
+        // Prime Video アプリが使う動画専用のドメイン (Fire HD の実機で再生時の問い合わせを記録して確認)
+        "amazonvideo.com",
+        "pv-cdn.net",
+        "aiv-delivery.net",
+        "prime-video.amazon.dev",
         // U-NEXT (書籍・マンガも同じドメインなので一緒に止まる)
         "unext.jp",
         // DMM (DMM TV だけでなく、ブックス・ゲームなど dmm.com 全体)
