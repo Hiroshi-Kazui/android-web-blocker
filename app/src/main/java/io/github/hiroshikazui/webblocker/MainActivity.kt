@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -63,7 +64,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        Protection.release(this)
+        Protection.enforce(this)
         state.refresh()
     }
 
@@ -76,6 +77,9 @@ class MainActivity : ComponentActivity() {
         startService(Intent(this, BlockerVpnService::class.java))
     }
 }
+
+private const val ADB_COMMAND =
+    "adb shell dpm set-device-owner io.github.hiroshikazui.webblocker/.AdminReceiver"
 
 @Composable
 private fun MainScreen(state: BlockerState, onStartVpn: () -> Unit) {
@@ -139,7 +143,29 @@ private fun MainScreen(state: BlockerState, onStartVpn: () -> Unit) {
                         if (snap.inBlockHours) " (現在ブロック時間中)" else " (現在は時間外)",
                 )
                 Text(if (snap.ntpSynced) "時刻: ネットの時刻と同期済み" else "時刻: 未同期 (端末の時計を使用)")
-                Text(if (deviceOwner) "旧版の保護: 解除中です" else "旧版の保護: なし (Google アカウントを追加できます)")
+                if (deviceOwner) {
+                    Text("保護: 有効 (アンインストール・VPN 解除・初期化・日時変更・アプリのインストールを禁止)")
+                } else {
+                    Text("保護: 未設定。PC から次のコマンドを実行してください (README 参照)")
+                    SelectionContainer { Text(ADB_COMMAND, style = MaterialTheme.typography.bodySmall) }
+                }
+            }
+        }
+        if (deviceOwner) {
+            item {
+                Section("アプリの更新") {
+                    if (snap.updateRemainingMs > 0) {
+                        val minutes = (snap.updateRemainingMs + 59_999) / 60_000
+                        Text("更新を許可中: 残り約 $minutes 分。この間はファイルや PC からインストールできます")
+                    } else {
+                        Text("更新するときは、ブロック時間外にここで許可してください (15 分間)", style = MaterialTheme.typography.bodySmall)
+                        Button(
+                            enabled = !snap.inBlockHours,
+                            onClick = { message = state.openUpdateWindow() },
+                        ) { Text("更新を許可") }
+                        if (snap.inBlockHours) Text("ブロック時間中は許可できません", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
             }
         }
         message?.let { m ->

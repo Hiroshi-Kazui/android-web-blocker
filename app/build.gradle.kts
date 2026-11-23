@@ -10,10 +10,11 @@ android {
 
     defaultConfig {
         applicationId = "io.github.hiroshikazui.webblocker"
-        minSdk = 29
+        // Fire OS 7 (Fire HD) が Android 9 相当のため
+        minSdk = 28
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.2.1"
+        versionCode = 5
+        versionName = "0.3.1"
     }
 
     buildTypes {

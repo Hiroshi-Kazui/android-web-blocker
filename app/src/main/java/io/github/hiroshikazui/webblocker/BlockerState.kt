@@ -10,6 +10,7 @@ import io.github.hiroshikazui.webblocker.core.Outcome
 import io.github.hiroshikazui.webblocker.core.Schedule
 import io.github.hiroshikazui.webblocker.core.Sites
 import io.github.hiroshikazui.webblocker.core.TrustedClock
+import io.github.hiroshikazui.webblocker.core.UpdateWindow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
@@ -24,10 +25,13 @@ data class Snapshot(
     val ntpSynced: Boolean,
     val permanent: List<String>,
     val timed: List<String>,
+    /** アプリの更新を許可している残り時間 (0 なら許可していない) */
+    val updateRemainingMs: Long,
 )
 
 /** 設定と時計を持ち、VPN と画面の両方から使われる。 */
 class BlockerState(context: Context) {
+    private val appContext = context.applicationContext
     private val configFile = File(context.filesDir, "config.json")
     private val prefs = context.getSharedPreferences("state", Context.MODE_PRIVATE)
     private val clock = TrustedClock(
@@ -40,16 +44,37 @@ class BlockerState(context: Context) {
     private val _snapshot = MutableStateFlow(buildSnapshot())
     val snapshot: StateFlow<Snapshot> = _snapshot
 
-    /** NTP 同期と、最新観測時刻の保存を続ける。 */
+    /** NTP 同期、最新観測時刻の保存、保護のかけ直し (更新許可の期限切れを含む) を続ける。 */
     fun startBackground() {
         thread(isDaemon = true, name = "trusted-clock") {
             while (true) {
                 clock.tick()
                 prefs.edit().putLong(KEY_LAST_SEEN, clock.nowMs()).apply()
+                Protection.apply(appContext, allowUpdate = updateRemainingMs() > 0)
                 refresh()
                 Thread.sleep(BACKGROUND_INTERVAL_MS)
             }
         }
+    }
+
+    @Synchronized
+    fun updateRemainingMs(): Long =
+        UpdateWindow.remainingMs(clock.nowMs(), prefs.getLong(KEY_UPDATE_UNTIL, 0L), inBlockHours())
+
+    /** ブロック時間外に限り、一定時間アプリの更新 (ファイル・PC からのインストール) を許可する。 */
+    fun openUpdateWindow(): Outcome {
+        val outcome = synchronized(this) {
+            val until = UpdateWindow.open(clock.nowMs(), inBlockHours())
+            if (until == null) {
+                Outcome(false, "ブロック時間中は更新を許可できません")
+            } else {
+                prefs.edit().putLong(KEY_UPDATE_UNTIL, until).apply()
+                Outcome(true, "${UpdateWindow.DURATION_MS / 60_000} 分間、アプリの更新を許可しました", changed = true)
+            }
+        }
+        if (outcome.ok) Protection.apply(appContext, allowUpdate = true)
+        refresh()
+        return outcome
     }
 
     @Synchronized
@@ -89,6 +114,7 @@ class BlockerState(context: Context) {
         ntpSynced = clock.isSynced,
         permanent = config.permanentRules(),
         timed = config.timedRules(),
+        updateRemainingMs = updateRemainingMs(),
     )
 
     private fun loadConfig(): Config {
@@ -116,6 +142,7 @@ class BlockerState(context: Context) {
     companion object {
         private const val TAG = "BlockerState"
         private const val KEY_LAST_SEEN = "last_seen_ms"
+        private const val KEY_UPDATE_UNTIL = "update_until_ms"
         private const val BACKGROUND_INTERVAL_MS = 30_000L
     }
 }
