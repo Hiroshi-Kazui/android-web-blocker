@@ -99,6 +99,8 @@ Fire OS 7 は Android 9 相当で、同じ APK を入れられます。手順は
   FOD、TVer、TELASA、バンダイチャンネル、ニコニコ (nicovideo.jp 全体)、Crunchyroll、HIDIVE、bilibili (漫画含む)、
   非公式アニメ視聴サイト、民放の見逃し配信、Rakuten Viki
 - 時間帯ブロック: YouTube (YouTube Music を含む)
+- LINE の広告 (常にブロック): 広告の配信元のドメインだけを止め、トーク・通話は止めない。
+  LINE 公式の一覧はないため、利用者の公開情報をもとにした仮の内容 (`Sites.kt` の `LINE_ADS`)。実機で広告が消えるかは未確認
 
 一覧は `app/src/main/java/io/github/hiroshikazui/webblocker/core/Sites.kt` で確認できます。
 

@@ -45,6 +45,19 @@ class SitesTest {
     }
 
     @Test
+    fun lineAdsAreAlwaysBlockedButLineItselfIsNot() {
+        val c = Config(utcOffsetMinutes = 540)
+        for (s in Sites.LINE_ADS) assertEquals(s, Sites.normalizeRule(s).getOrThrow())
+        assertTrue(Sites.matches("sch.line.me", c.activeRules(false)))
+        assertTrue(Sites.matches("sch.line.me", c.activeRules(true)))
+        assertEquals(Removal.PERMANENT, c.removeSite("sch.line.me"))
+        // トーク・通話・画像に使うドメインは止めない
+        for (core in listOf("line.me", "access.line.me", "obs.line-scdn.net", "gw.line.naver.jp", "legy-jp.line-apps.com")) {
+            assertFalse(core, Sites.matches(core, c.activeRules(true)))
+        }
+    }
+
+    @Test
     fun matchesDomainAndSubdomainsOnly() {
         val rules = listOf("nicovideo.jp", "dmm.com")
         assertTrue(Sites.matches("nicovideo.jp", rules))

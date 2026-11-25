@@ -70,6 +70,19 @@ object Sites {
         "viki.com",
     )
 
+    /**
+     * LINE アプリの広告の配信元 (恒久ブロックと同じく常に止める)。
+     *
+     * 仮の内容。LINE 公式の一覧はなく、利用者の公開情報から、トーク・通話を壊す報告がないものだけを入れている。
+     * 次の候補は副作用の恐れがあるため入れていない (実機で広告表示時の問い合わせを記録してから判断する):
+     * - obs.line-scdn.net: トークの画像・ホームのテーマ・VOOM も表示されなくなる報告がある
+     * - gw.line.naver.jp: 実体が legy-jp-addr-ds.line-apps.com (LINE 本体の通信と同じ宛先) で、止めるとトークが壊れる恐れがある
+     * - scdn.line-apps.com, a.line.me: 1 件の記事にしか挙がっておらず、役割が未確認
+     */
+    val LINE_ADS: List<String> = listOf(
+        "sch.line.me",
+    )
+
     /** ユーザー入力をドメイン名に正規化する。失敗したら理由を返す。 */
     fun normalizeRule(input: String): Result<String> {
         var s = input.trim().lowercase()

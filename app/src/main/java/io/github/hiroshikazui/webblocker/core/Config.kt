@@ -25,10 +25,11 @@ class Config(
         return if (s != null && e != null) s to e else (21 * 60) to (7 * 60)
     }
 
-    fun isPermanent(rule: String): Boolean = rule in Sites.PERMANENT_DEFAULTS || rule in permanentSites
+    fun isPermanent(rule: String): Boolean =
+        rule in Sites.PERMANENT_DEFAULTS || rule in Sites.LINE_ADS || rule in permanentSites
 
-    /** 恒久ブロックのサイト (既定 + 追加) */
-    fun permanentRules(): List<String> = (Sites.PERMANENT_DEFAULTS + permanentSites).distinct()
+    /** 恒久ブロックのサイト (既定 + LINE 広告 + 追加) */
+    fun permanentRules(): List<String> = (Sites.PERMANENT_DEFAULTS + Sites.LINE_ADS + permanentSites).distinct()
 
     /** 時間帯ブロックのサイト (既定から外したものを除く + 追加。恒久ブロックと重なるものは除く) */
     fun timedRules(): List<String> =
