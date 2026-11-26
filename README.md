@@ -100,7 +100,8 @@ Fire OS 7 は Android 9 相当で、同じ APK を入れられます。手順は
   非公式アニメ視聴サイト、民放の見逃し配信、Rakuten Viki
 - 時間帯ブロック: YouTube (YouTube Music を含む)
 - LINE の広告 (常にブロック): 広告の配信元のドメインだけを止め、トーク・通話は止めない。
-  LINE 公式の一覧はないため、利用者の公開情報をもとにした仮の内容 (`Sites.kt` の `LINE_ADS`)。実機で広告が消えるかは未確認
+  LINE 公式の一覧はないため、実機で広告表示時の問い合わせを記録して選んだ (`Sites.kt` の `LINE_ADS`)。
+  トーク一覧・ニュースの広告が消え、トーク・写真は使えることを確認済み。LINE の更新で配信元が変わると、また表示される可能性がある
 
 一覧は `app/src/main/java/io/github/hiroshikazui/webblocker/core/Sites.kt` で確認できます。
 

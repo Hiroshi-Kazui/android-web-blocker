@@ -73,14 +73,23 @@ object Sites {
     /**
      * LINE アプリの広告の配信元 (恒久ブロックと同じく常に止める)。
      *
-     * 仮の内容。LINE 公式の一覧はなく、利用者の公開情報から、トーク・通話を壊す報告がないものだけを入れている。
-     * 次の候補は副作用の恐れがあるため入れていない (実機で広告表示時の問い合わせを記録してから判断する):
+     * LINE 公式の一覧はない。sch.line.me は利用者の公開情報から、残りは実機 (Pixel 10a) で広告を表示したときの
+     * 問い合わせを記録して入れた。da.flvcdn.net / d.line-scdn.net はトーク一覧の広告 (LINE のキャッシュを消して記録)、
+     * それ以外はニュースの広告。トーク・ニュースの広告が消え、トークの送受信・写真も使えることを実機で確認 (2026-11-26)。
+     * LINE の更新で配信元が変わると、また表示されるようになる可能性がある。
+     * 次の候補は副作用の恐れがあるため入れていない:
      * - obs.line-scdn.net: トークの画像・ホームのテーマ・VOOM も表示されなくなる報告がある
-     * - gw.line.naver.jp: 実体が legy-jp-addr-ds.line-apps.com (LINE 本体の通信と同じ宛先) で、止めるとトークが壊れる恐れがある
-     * - scdn.line-apps.com, a.line.me: 1 件の記事にしか挙がっておらず、役割が未確認
+     * - gw.line.naver.jp, legy-jp.line-apps.com: LINE 本体の通信 (メッセージの送受信) と同じ宛先
      */
     val LINE_ADS: List<String> = listOf(
         "sch.line.me",
+        "a.line.me",
+        "3ppa.jp.cinarra.com",
+        "apm.yahoo.co.jp",
+        "dm.slim01.jp",
+        "tps.doubleverify.com",
+        "da.flvcdn.net",
+        "d.line-scdn.net",
     )
 
     /** ユーザー入力をドメイン名に正規化する。失敗したら理由を返す。 */
